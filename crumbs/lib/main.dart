@@ -1,12 +1,17 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 const Color textFieldColor = Color(0xFFF0F5FA);
 const Color backgroundColor = Color(0xFF121223);
 
-void main() {
-  runApp(LocationPage());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(EntryPage());
 }
+
 
 class LocationPage extends StatelessWidget {
   @override
@@ -162,6 +167,10 @@ class MyHomePage extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   // Handle user button press
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LocationPage()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -170,9 +179,11 @@ class MyHomePage extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  "User",
+                  "USER",
                   style: TextStyle(
                     color: Colors.white,
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -184,6 +195,10 @@ class MyHomePage extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   // Handle restaurant button press
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LocationPage()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -192,9 +207,11 @@ class MyHomePage extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  "Restaurant",
+                  "RESTAURANT",
                   style: GoogleFonts.sen( textStyle: TextStyle(
                     color: Colors.white,
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
                   )),
                 ),
               ),
@@ -205,7 +222,6 @@ class MyHomePage extends StatelessWidget {
     );
   }
 }
-
 
 
 class EntryPage extends StatelessWidget {
@@ -229,6 +245,11 @@ class EntryPageContent extends StatefulWidget {
 }
 
 class _EntryPageContentState extends State<EntryPageContent> {
+  final Auth _auth = Auth();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
   void _showBottomSheet(String action) {
     showModalBottomSheet(
       context: context,
@@ -242,16 +263,32 @@ class _EntryPageContentState extends State<EntryPageContent> {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (action == 'Sign up') _buildTextField('Name'),
+                if (action == 'Sign up') _buildTextField('Name', nameController),
                 if (action == 'Sign up') SizedBox(height: 10),
-                _buildTextField('Email'),
+                _buildTextField('Email', emailController),
                 SizedBox(height: 10),
-                _buildTextField('Password'),
+                _buildTextField('Password', passwordController, isPassword: true),
                 SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
-                    // Handle authentication logic
+                  onPressed: () async {
+                    if (action == 'Log in') {
+                      // Get email and password from controllers
+                      String email = emailController.text;
+                      String password = passwordController.text;
+                      // Handle login logic
+                      await _auth.signInWithEmailAndPassword(email: email, password: password);
+                    } else if (action == 'Sign up') {
+                      // Get name, email, and password from controllers
+                      String name = nameController.text;
+                      String email = emailController.text;
+                      String password = passwordController.text;
+                      // Handle signup logic
+                      await _auth.createUserWithEmailAndPassword(name: name, email: email, password: password);
+                    }
+
+                    // ignore: use_build_context_synchronously
                     Navigator.pop(context); // Close the bottom sheet
+                    // ignore: use_build_context_synchronously
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => MyHomePage()),
@@ -278,7 +315,7 @@ class _EntryPageContentState extends State<EntryPageContent> {
     );
   }
 
-  Widget _buildTextField(String labelText) {
+  Widget _buildTextField(String labelText, TextEditingController controller, {bool isPassword = false}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20),
       margin: EdgeInsets.symmetric(vertical: 10),
@@ -287,6 +324,8 @@ class _EntryPageContentState extends State<EntryPageContent> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextField(
+        controller: controller,
+        obscureText: isPassword,
         decoration: InputDecoration(
           labelText: labelText,
           border: InputBorder.none,
