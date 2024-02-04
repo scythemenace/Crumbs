@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MyHomePage(),
+      home: EntryPage(),
     );
   }
 }
@@ -21,7 +21,33 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0.0,
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.pop(context); // Navigate back to the EntryPage
+          },
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                margin: EdgeInsets.all(5),
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+              ),
+              Icon(
+                Icons.arrow_back,
+                color: Colors.grey,
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -31,21 +57,26 @@ class MyHomePage extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 20.0,
-              ),
-            ),
-            SizedBox(height: 20.0),
-            Text(
-              "No matter who you are, we would love to be of service to you",
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16.0,
+                fontSize: 24.0,
               ),
               textAlign: TextAlign.center,
             ),
+            SizedBox(height: 20.0),
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.0),
+              child: Text(
+                "No matter who you are, we would love to be of service to you",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16.0,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
             SizedBox(height: 40.0),
             SizedBox(
-              width: 200.0, // Adjust the width as needed
+              width: 300.0,
+              height: 50.0,
               child: ElevatedButton(
                 onPressed: () {
                   // Handle user button press
@@ -53,7 +84,7 @@ class MyHomePage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
                 child: Text(
@@ -66,7 +97,8 @@ class MyHomePage extends StatelessWidget {
             ),
             SizedBox(height: 20.0),
             SizedBox(
-              width: 200.0, // Adjust the width as needed
+              width: 300.0,
+              height: 50.0,
               child: ElevatedButton(
                 onPressed: () {
                   // Handle restaurant button press
@@ -74,7 +106,7 @@ class MyHomePage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
+                    borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
                 child: Text(
@@ -93,6 +125,7 @@ class MyHomePage extends StatelessWidget {
 }
 
 
+
 class EntryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -109,7 +142,6 @@ class EntryPage extends StatelessWidget {
 
 class EntryPageContent extends StatefulWidget {
   @override
-  // ignore: library_private_types_in_public_api
   _EntryPageContentState createState() => _EntryPageContentState();
 }
 
@@ -137,6 +169,10 @@ class _EntryPageContentState extends State<EntryPageContent> {
                   onPressed: () {
                     // Handle authentication logic
                     Navigator.pop(context); // Close the bottom sheet
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MyHomePage()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
