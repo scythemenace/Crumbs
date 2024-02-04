@@ -17,12 +17,10 @@ const Color backgroundColor = Color(0xFF121223);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(UserPage());
+  runApp(EntryPage());
   FirebaseFirestore.instance.settings = Settings(
     persistenceEnabled: true,
   );
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
 }
 
 class UserPage extends StatelessWidget {
@@ -33,7 +31,7 @@ class UserPage extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: RestaurantPage(),
+      home: UserPageS(),
     );
   }
 }
@@ -47,6 +45,7 @@ class _UserPage extends State<UserPageS> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: backgroundColor,
         title: Text(
@@ -63,39 +62,37 @@ class _UserPage extends State<UserPageS> {
       ),
       body: Container(
         color: backgroundColor,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                "Hungry? Don't worry!",
-                style: GoogleFonts.sen(textStyle: TextStyle(
-                  color: Colors.orange,
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                )),
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    CustomCard(
-                      image: 'assets/food1.jpg',
-                      title: 'Delicious Dish 1',
-                      description: 'A mouthwatering dish that will satisfy your cravings.',
+        child: StreamBuilder(
+          stream: FirebaseFirestore.instance
+              .collection('restaurant')
+              .doc('post')
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              DocumentSnapshot restaurantData = snapshot.data!;
+              List<String> postNames =
+                  List<String>.from(restaurantData['postName']);
+              List<String> postDescriptions =
+                  List<String>.from(restaurantData['postDescription']);
+
+              return Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: List.generate(
+                      postNames.length,
+                      (index) => CustomCard(
+                        title: postNames[index],
+                        description: postDescriptions[index],
+                      ),
                     ),
-                    CustomCard(
-                      image: 'assets/food2.jpg',
-                      title: 'Tasty Treat 2',
-                      description: 'An irresistible treat to tantalize your taste buds.',
-                    ),
-                    // Add more CustomCard widgets as needed
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
+              );
+            } else if (snapshot.hasError) {
+              print(snapshot.error); // Print the error for debugging
+            }
+            return const CircularProgressIndicator();
+          },
         ),
       ),
     );
@@ -103,12 +100,10 @@ class _UserPage extends State<UserPageS> {
 }
 
 class CustomCard extends StatelessWidget {
-  final String image;
   final String title;
   final String description;
 
   CustomCard({
-    required this.image,
     required this.title,
     required this.description,
   });
@@ -125,24 +120,11 @@ class CustomCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 120.0, // Adjust the width as needed
-              height: 120.0, // Adjust the height as needed
-              child: Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16.0),
-                  child: Image.asset(
-                    image,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       title,
@@ -151,12 +133,27 @@ class CustomCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 12.0), // Adjust the height as needed
+                    SizedBox(height: 12.0),
                     Text(
                       description,
                       style: TextStyle(fontSize: 16.0),
                     ),
                   ],
+                ),
+              ),
+            ),
+            Container(
+              width: 120.0,
+              height: 120.0,
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Image.network(
+                    "https://firebasestorage.googleapis.com/v0/b/crumbs-4db5b.appspot.com/o/restaurant_images%2F$title.jpg?alt=media&token=a2c9b3cb-97a5-4948-8682-a4ed3645b52f",
+                    fit: BoxFit.cover,
+                    width: 120.0,
+                    height: 120.0,
+                  ),
                 ),
               ),
             ),
@@ -514,6 +511,7 @@ class _LocationState extends State<Location> {
   }
   @override
   Widget build(BuildContext context) {
+    User? user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
@@ -597,9 +595,34 @@ class _LocationState extends State<Location> {
             Visibility(
               visible: locationAccessed,
               child: ElevatedButton(
-                onPressed: () {
-                  // Add the logic for the new button here
-                  // For example, navigate to a new screen or perform some action
+                onPressed: () async {
+                  try {
+                    // ignore: unrelated_type_equality_checks
+                    if (user != null && user.uid != Null) {
+                      CollectionReference typeRef = FirebaseFirestore.instance.collection('type');
+                      DocumentSnapshot typeSnapshot = await typeRef.doc(user.uid).get();
+                      if (typeSnapshot.exists) {
+                        String who = typeSnapshot['who'];
+                        if (who == 'user') {
+                          // ignore: use_build_context_synchronously
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => UserPage()),
+                          );
+                        } else if (who == 'restaurant') {
+                          // ignore: use_build_context_synchronously
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => RestaurantPage()),
+                          );
+                        }
+                      }
+                    }
+
+                  } catch (e) {
+                    print(e.toString());
+                    // Handle errors if needed
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green, // Change the color as needed
