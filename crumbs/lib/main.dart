@@ -5,8 +5,90 @@ const Color textFieldColor = Color(0xFFF0F5FA);
 const Color backgroundColor = Color(0xFF121223);
 
 void main() {
-  runApp(MyApp());
+  runApp(LocationPage());
 }
+
+class LocationPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Location(),
+    );
+  }
+}
+
+class Location extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+              child: Icon(
+                Icons.location_on,
+                size: 80,
+                color: Colors.black,
+              ),
+            ),
+            SizedBox(height: 90),
+            ElevatedButton(
+              onPressed: () {
+                // Add your location access logic here
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                fixedSize: Size(320, 60),
+              ),
+              child: Text(
+                "ACCESS LOCATION",
+                style: GoogleFonts.sen(
+                  textStyle: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20.0,
+                  ),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: 20),
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 50.0), // Adjusted margin to occupy the width
+              child: Text(
+                "Please hold steady, this will only take a while",
+                style: GoogleFonts.sen(
+                  textStyle: TextStyle(
+                    color: Color(0xFFFBF6F6),
+                    fontSize: 19.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
 
 class MyApp extends StatelessWidget {
   @override
@@ -66,10 +148,10 @@ class MyHomePage extends StatelessWidget {
               margin: EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
                 "No matter who you are, we would love to be of service to you",
-                style: TextStyle(
+                style: GoogleFonts.sen(textStyle: TextStyle(
                   color: Colors.grey,
                   fontSize: 16.0,
-                ),
+                )),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -111,9 +193,9 @@ class MyHomePage extends StatelessWidget {
                 ),
                 child: Text(
                   "Restaurant",
-                  style: TextStyle(
+                  style: GoogleFonts.sen( textStyle: TextStyle(
                     color: Colors.white,
-                  ),
+                  )),
                 ),
               ),
             ),
@@ -142,6 +224,7 @@ class EntryPage extends StatelessWidget {
 
 class EntryPageContent extends StatefulWidget {
   @override
+  // ignore: library_private_types_in_public_api
   _EntryPageContentState createState() => _EntryPageContentState();
 }
 
@@ -182,7 +265,7 @@ class _EntryPageContentState extends State<EntryPageContent> {
                   ),
                   child: Text(
                     action,
-                    style: GoogleFonts.lato(
+                    style: GoogleFonts.sen(
                       textStyle: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
@@ -239,7 +322,7 @@ class _EntryPageContentState extends State<EntryPageContent> {
                 child: Center(
                   child: Text(
                     'Log in',
-                    style: GoogleFonts.lato(
+                    style: GoogleFonts.sen(
                       textStyle: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
@@ -262,7 +345,7 @@ class _EntryPageContentState extends State<EntryPageContent> {
                 child: Center(
                   child: Text(
                     'Sign up',
-                    style: GoogleFonts.lato(
+                    style: GoogleFonts.sen(
                       textStyle: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
