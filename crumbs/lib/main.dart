@@ -6,6 +6,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
 
 const Color textFieldColor = Color(0xFFF0F5FA);
 const Color backgroundColor = Color(0xFF121223);
@@ -13,11 +17,159 @@ const Color backgroundColor = Color(0xFF121223);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(RestaurantPage());
+  runApp(UserPage());
   FirebaseFirestore.instance.settings = Settings(
     persistenceEnabled: true,
   );
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
 }
+
+class UserPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Hungry App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: RestaurantPage(),
+    );
+  }
+}
+
+class UserPageS extends StatefulWidget {
+  @override
+  _UserPage createState() => _UserPage();
+}
+
+class _UserPage extends State<UserPageS> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: backgroundColor,
+        title: Text(
+          'Hello, ${FirebaseAuth.instance.currentUser!.email}!',
+          style: GoogleFonts.sen(
+            textStyle: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20.0,
+            ),
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Container(
+        color: backgroundColor,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "Hungry? Don't worry!",
+                style: GoogleFonts.sen(textStyle: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 24.0,
+                  fontWeight: FontWeight.bold,
+                )),
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    CustomCard(
+                      image: 'assets/food1.jpg',
+                      title: 'Delicious Dish 1',
+                      description: 'A mouthwatering dish that will satisfy your cravings.',
+                    ),
+                    CustomCard(
+                      image: 'assets/food2.jpg',
+                      title: 'Tasty Treat 2',
+                      description: 'An irresistible treat to tantalize your taste buds.',
+                    ),
+                    // Add more CustomCard widgets as needed
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CustomCard extends StatelessWidget {
+  final String image;
+  final String title;
+  final String description;
+
+  CustomCard({
+    required this.image,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        elevation: 4.0,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 120.0, // Adjust the width as needed
+              height: 120.0, // Adjust the height as needed
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Image.asset(
+                    image,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 12.0), // Adjust the height as needed
+                    Text(
+                      description,
+                      style: TextStyle(fontSize: 16.0),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
 
 class RestaurantPage extends StatelessWidget {
   @override
@@ -30,18 +182,185 @@ class RestaurantPage extends StatelessWidget {
 
 class MyStatefulPage extends StatefulWidget {
   @override
-  // ignore: library_private_types_in_public_api
   _MyStatefulPageState createState() => _MyStatefulPageState();
 }
 
 class _MyStatefulPageState extends State<MyStatefulPage> {
+  TextEditingController foodItemController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+
+  void _showPostDialog() {
+    TextEditingController imageController = TextEditingController();
+    User? user = FirebaseAuth.instance.currentUser;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Post Details', style: TextStyle(color: Colors.black)),
+          content: Container(
+            width: 300, // Adjust the width as needed
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildRoundedTextField('Food Item', foodItemController),
+                SizedBox(height: 10),
+                _buildRoundedScrollableTextField(
+                    'Short Description', descriptionController),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () async {
+                    // Add functionality to handle the post data here
+                    String foodItem = foodItemController.text;
+                    String description = descriptionController.text;
+
+                    // Upload image to Firebase Storage
+                    String imageUrl = await _uploadImage(
+                        foodItem, imageController.text);
+
+                    // Store post data in Firestore
+                    if (user != null && user.uid != Null){
+                      // Store the post data in Firestore
+                      await _storePostData(foodItem, description, imageUrl);
+                    }
+
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                  child: Text('POST'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            // Empty for now, you can add actions if needed
+          ],
+        );
+      },
+    );
+  }
+
+  Future<String> _uploadImage(String foodItem, String imageUrl) async {
+  if (imageUrl.isNotEmpty) {
+    // If the user provided an image URL, use it directly
+    return imageUrl;
+  } else {
+    // If the user selected an image from the device, upload it to Firebase Storage
+    File imageFile = await _pickImageFromGallery(); // Ensure it's a File type
+
+    String imageName = '$foodItem.jpg'; // Adjust the image name as needed
+
+    Reference storageReference =
+        FirebaseStorage.instance.ref().child('restaurant_images/$imageName');
+
+    try {
+      await storageReference.putFile(imageFile);
+      return await storageReference.getDownloadURL();
+    } catch (error) {
+      // Handle any errors that occur during the upload process
+      print('Error uploading image: $error');
+      return Future.error('Failed to upload image');
+    }
+  }
+}
+
+Future<File> _pickImageFromGallery() async {
+  final ImagePicker picker = ImagePicker();
+  final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+  if (pickedFile != null) {
+    return File(pickedFile.path);
+  } else {
+    // Handle if the user canceled image picking
+    return Future.error('No image selected');
+  }
+}
+
+  Future<void> _storePostData(String foodItem, String description, String imageUrl) async {
+  CollectionReference restaurantCollection =
+      FirebaseFirestore.instance.collection('restaurant');
+
+  // Check if the document for the user already exists
+  var userDoc = await restaurantCollection.doc("post").get();
+
+  if (userDoc.exists) {
+    // If the document exists, update the existing fields and add new ones
+    await restaurantCollection.doc("post").update({
+      'postName': FieldValue.arrayUnion([foodItem]),
+      'postDescription': FieldValue.arrayUnion([description]),
+    });
+  } else {
+    // If the document doesn't exist, create a new one
+    await restaurantCollection.doc("post").set({
+      'postName': [foodItem],
+      'postDescription': [description],
+    });
+  }
+}
+
+
+
+
+Widget _buildRoundedTextField(String labelText, TextEditingController controller) {
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: 20),
+    margin: EdgeInsets.symmetric(vertical: 10),
+    decoration: BoxDecoration(
+      color: textFieldColor, // Change color according to your design
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: InputBorder.none,
+        labelStyle: TextStyle(color: Colors.black),
+      ),
+      style: TextStyle(fontSize: 18, color: Colors.black),
+    ),
+  );
+}
+
+
+Widget _buildRoundedScrollableTextField(String labelText, TextEditingController controller) {
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: 20),
+    margin: EdgeInsets.symmetric(vertical: 10),
+    decoration: BoxDecoration(
+      color: textFieldColor, // Change color according to your design
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: SingleChildScrollView(
+      child: TextField(
+        controller: controller,
+        maxLines: null, // Set maxLines to null for multiline input
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: InputBorder.none,
+          labelStyle: TextStyle(color: Colors.black),
+        ),
+        style: TextStyle(fontSize: 18, color: Colors.black),
+      ),
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text('Hello'),
+        backgroundColor: backgroundColor,
+        title: Text(
+          'Hello, ${FirebaseAuth.instance.currentUser!.email}!',
+          style: GoogleFonts.sen(
+            textStyle: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20.0,
+            ),
+          ),
+        ),
         centerTitle: true,
       ),
       body: Center(
@@ -50,14 +369,35 @@ class _MyStatefulPageState extends State<MyStatefulPage> {
           children: [
             Text(
               'Go ahead post about the leftovers',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18.0,
+              ),
+              textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Add your post button functionality here
-              },
-              child: Text('POST'),
+              onPressed: _showPostDialog,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                fixedSize: Size(320, 60),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              child: Text(
+                'POST',
+                style: GoogleFonts.sen(
+                  textStyle: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20.0,
+                  ),
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),
@@ -65,7 +405,6 @@ class _MyStatefulPageState extends State<MyStatefulPage> {
     );
   }
 }
-
 
 class Location extends StatefulWidget {
   @override
