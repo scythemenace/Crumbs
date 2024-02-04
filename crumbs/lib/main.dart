@@ -13,13 +13,58 @@ const Color backgroundColor = Color(0xFF121223);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(EntryPage());
+  runApp(RestaurantPage());
   FirebaseFirestore.instance.settings = Settings(
     persistenceEnabled: true,
   );
 }
 
+class RestaurantPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: MyStatefulPage(),
+    );
+  }
+}
 
+class MyStatefulPage extends StatefulWidget {
+  @override
+  // ignore: library_private_types_in_public_api
+  _MyStatefulPageState createState() => _MyStatefulPageState();
+}
+
+class _MyStatefulPageState extends State<MyStatefulPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Text('Hello'),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Go ahead post about the leftovers',
+              style: TextStyle(color: Colors.white),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Add your post button functionality here
+              },
+              child: Text('POST'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 
 class Location extends StatefulWidget {
@@ -33,6 +78,7 @@ class _LocationState extends State<Location> {
   late String lat;
   late String long;
   late String locationMessage = "Current Location";
+  bool locationAccessed = false;
 
   Future<void> _storeLocationInFirestore(double latitude, double longitude) async {
   try {
@@ -157,6 +203,7 @@ class _LocationState extends State<Location> {
                     lat = '${position.latitude}';
                     long = '${position.longitude}';
                     locationMessage = "Latitude: $lat, Longitude: $long";
+                    locationAccessed = true;
                   });
 
                   await _storeLocationInFirestore(position.latitude, position.longitude);
@@ -207,6 +254,35 @@ class _LocationState extends State<Location> {
               locationMessage, // Added null check
               style: TextStyle(color: Colors.white),
             ),
+            SizedBox(height: 30),
+            Visibility(
+              visible: locationAccessed,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Add the logic for the new button here
+                  // For example, navigate to a new screen or perform some action
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, // Change the color as needed
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20.0),
+                  fixedSize: Size(320, 60),
+                ),
+                child: Text(
+                  "NEXT",
+                  style: GoogleFonts.sen(
+                    textStyle: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20.0,
+                    ),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -218,16 +294,48 @@ class _LocationState extends State<Location> {
 
 
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: EntryPage(),
-    );
-  }
+  // ignore: library_private_types_in_public_api
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
-class MyHomePage extends StatelessWidget {
+class _MyHomePageState extends State<MyApp> {
+  
+  late String who;
+
+  Future<void> _storeTypeInFirestore(String who) async {
+    try {
+      // Get the current user from Firebase authentication
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null && user.uid != Null) {
+        // Use the user's UID to create a reference to the 'locations' collection in Firestore
+        CollectionReference typeRef = FirebaseFirestore.instance.collection('type');
+
+        // Check if the 'locations' collection already exists
+        DocumentSnapshot typeSnapshot = await typeRef.doc(user.uid).get();
+
+        if (typeSnapshot.exists) {
+          // 'locations' collection exists, check if user UID exists and update or create new data
+          typeRef.doc(user.uid).set({
+            'who': who,
+          }, SetOptions(merge: true));
+        } else {
+          // 'locations' collection doesn't exist, create it and add data
+          typeRef.doc(user.uid).set({
+            'who': who,
+          });
+        }
+
+        print('Type stored successfully for user with ID: ${user.uid}');
+      } else {
+        print('No user or UID is null.');
+      }
+    } catch (e) {
+      print('Error storing Type: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -288,12 +396,18 @@ class MyHomePage extends StatelessWidget {
               width: 300.0,
               height: 50.0,
               child: ElevatedButton(
-                onPressed: () {
-                  // Handle user button press
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Location()),
-                  );
+                onPressed: () async {
+                  who = "user";
+                  try {
+                    await _storeTypeInFirestore(who);
+                    // ignore: use_build_context_synchronously
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Location()),
+                    );
+                  } catch (e) {
+                    print('Error handling user button press: $e');
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -316,12 +430,18 @@ class MyHomePage extends StatelessWidget {
               width: 300.0,
               height: 50.0,
               child: ElevatedButton(
-                onPressed: () {
-                  // Handle restaurant button press
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Location()),
-                  );
+                onPressed: () async {
+                  who = "restaurant";
+                  try {
+                    await _storeTypeInFirestore(who);
+                    // ignore: use_build_context_synchronously
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Location()),
+                    );
+                  } catch (e) {
+                    print('Error handling restaurant button press: $e');
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
@@ -414,7 +534,7 @@ class _EntryPageContentState extends State<EntryPageContent> {
                     // ignore: use_build_context_synchronously
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MyHomePage()),
+                      MaterialPageRoute(builder: (context) => MyApp()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
