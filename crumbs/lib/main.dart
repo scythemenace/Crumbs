@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+const Color textFieldColor = Color(0xFFF0F5FA);
+const Color backgroundColor = Color(0xFF121223);
 
 void main() {
   runApp(MyApp());
@@ -27,7 +31,7 @@ class MyHomePage extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 24.0, // Adjusted font size
+                fontSize: 20.0,
               ),
             ),
             SizedBox(height: 20.0),
@@ -84,6 +88,154 @@ class MyHomePage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+class EntryPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: EntryPageContent(),
+        ),
+      ),
+    );
+  }
+}
+
+class EntryPageContent extends StatefulWidget {
+  @override
+  // ignore: library_private_types_in_public_api
+  _EntryPageContentState createState() => _EntryPageContentState();
+}
+
+class _EntryPageContentState extends State<EntryPageContent> {
+  void _showBottomSheet(String action) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(16.0),
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (action == 'Sign up') _buildTextField('Name'),
+                if (action == 'Sign up') SizedBox(height: 10),
+                _buildTextField('Email'),
+                SizedBox(height: 10),
+                _buildTextField('Password'),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    // Handle authentication logic
+                    Navigator.pop(context); // Close the bottom sheet
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: Text(
+                    action,
+                    style: GoogleFonts.lato(
+                      textStyle: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTextField(String labelText) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: textFieldColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: TextField(
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: InputBorder.none,
+        ),
+        style: TextStyle(fontSize: 18, color: Colors.black),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Image.asset('assets/crumbs_logo.png', height: 170, width: 170),
+        Image.asset('assets/Crumbs-logos_transparent.png', height: 140, width: 140),
+        SizedBox(height: 20),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                _showBottomSheet('Log in');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+              child: SizedBox(
+                width: 200,
+                child: Center(
+                  child: Text(
+                    'Log in',
+                    style: GoogleFonts.lato(
+                      textStyle: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                _showBottomSheet('Sign up');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+              ),
+              child: SizedBox(
+                width: 200,
+                child: Center(
+                  child: Text(
+                    'Sign up',
+                    style: GoogleFonts.lato(
+                      textStyle: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
