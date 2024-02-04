@@ -2,6 +2,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 const Color textFieldColor = Color(0xFFF0F5FA);
 const Color backgroundColor = Color(0xFF121223);
@@ -10,19 +13,104 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(EntryPage());
+  FirebaseFirestore.instance.settings = Settings(
+    persistenceEnabled: true,
+  );
 }
 
 
-class LocationPage extends StatelessWidget {
+
+
+class Location extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Location(),
-    );
-  }
+  // ignore: library_private_types_in_public_api
+  _LocationState createState() => _LocationState();
 }
 
-class Location extends StatelessWidget {
+class _LocationState extends State<Location> {
+
+  late String lat;
+  late String long;
+  late String locationMessage = "Current Location";
+
+  Future<Position> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the 
+      // App to enable the location services.
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale 
+        // returned true. According to Android guidelines
+        // your App should show an explanatory UI now.
+        return Future.error('Location permissions are denied');
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately. 
+      return Future.error(
+        'Location permissions are permanently denied, we cannot request permissions.');
+    } 
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition();
+}
+
+  void _livelocation() {
+    LocationSettings locationSettings = const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 100,
+    );
+
+    Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) {
+      lat = position.latitude.toString();
+      long = position.longitude.toString();
+
+      setState(() {
+        locationMessage = "Latitude: $lat, Longitude: $long";
+      });
+
+      _storeLocationInFirestore(position.latitude, position.longitude);
+    });
+  }
+
+
+  Future<void> _storeLocationInFirestore(double latitude, double longitude) async {
+    try {
+      // Get the current user's UID from Firebase authentication
+      String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+      // Create a reference to the user's document in Firestore
+      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+
+      // Update the user's location in Firestore
+      await userRef.update({
+        'latitude': latitude,
+        'longitude': longitude,
+      });
+
+      print('Location stored successfully.');
+    } catch (e) {
+      print('Error storing location: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,8 +134,19 @@ class Location extends StatelessWidget {
             ),
             SizedBox(height: 90),
             ElevatedButton(
-              onPressed: () {
-                // Add your location access logic here
+              onPressed: () async {
+                try {
+                  Position position = await _getCurrentLocation();
+                  setState(() {
+                    lat = '${position.latitude}';
+                    long = '${position.longitude}';
+                    locationMessage = "Latitude: $lat, Longitude: $long";
+                  });
+                  _livelocation();
+                } catch (e) {
+                  print(e.toString());
+                  // Handle errors if needed
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
@@ -71,7 +170,7 @@ class Location extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 50.0), // Adjusted margin to occupy the width
+              margin: EdgeInsets.symmetric(horizontal: 50.0),
               child: Text(
                 "Please hold steady, this will only take a while",
                 style: GoogleFonts.sen(
@@ -83,6 +182,11 @@ class Location extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              locationMessage, // Added null check
+              style: TextStyle(color: Colors.white),
             ),
           ],
         ),
@@ -169,7 +273,7 @@ class MyHomePage extends StatelessWidget {
                   // Handle user button press
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => LocationPage()),
+                    MaterialPageRoute(builder: (context) => Location()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -197,7 +301,7 @@ class MyHomePage extends StatelessWidget {
                   // Handle restaurant button press
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => LocationPage()),
+                    MaterialPageRoute(builder: (context) => Location()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
