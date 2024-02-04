@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 
 const Color textFieldColor = Color(0xFFF0F5FA);
 const Color backgroundColor = Color(0xFF121223);
@@ -32,6 +33,41 @@ class _LocationState extends State<Location> {
   late String lat;
   late String long;
   late String locationMessage = "Current Location";
+
+  Future<void> _storeLocationInFirestore(double latitude, double longitude) async {
+  try {
+    // Get the current user from Firebase authentication
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null && user.uid != Null) {
+      // Use the user's UID to create a reference to the 'locations' collection in Firestore
+      CollectionReference locationsRef = FirebaseFirestore.instance.collection('locations');
+
+      // Check if the 'locations' collection already exists
+      DocumentSnapshot locationsSnapshot = await locationsRef.doc(user.uid).get();
+
+      if (locationsSnapshot.exists) {
+        // 'locations' collection exists, check if user UID exists and update or create new data
+        locationsRef.doc(user.uid).set({
+          'latitude': latitude,
+          'longitude': longitude,
+        }, SetOptions(merge: true));
+      } else {
+        // 'locations' collection doesn't exist, create it and add data
+        locationsRef.doc(user.uid).set({
+          'latitude': latitude,
+          'longitude': longitude,
+        });
+      }
+
+      print('Location stored successfully for user with ID: ${user.uid}');
+    } else {
+      print('No user or UID is null.');
+    }
+  } catch (e) {
+    print('Error storing location: $e');
+  }
+}
 
   Future<Position> _getCurrentLocation() async {
     bool serviceEnabled;
@@ -70,13 +106,17 @@ class _LocationState extends State<Location> {
     return await Geolocator.getCurrentPosition();
 }
 
+  StreamSubscription<Position>? _locationSubscription;
+
   void _livelocation() {
+
     LocationSettings locationSettings = const LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 100,
     );
 
-    Geolocator.getPositionStream(locationSettings: locationSettings)
+    // Start a new stream
+    _locationSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position position) {
       lat = position.latitude.toString();
       long = position.longitude.toString();
@@ -85,32 +125,8 @@ class _LocationState extends State<Location> {
         locationMessage = "Latitude: $lat, Longitude: $long";
       });
 
-      _storeLocationInFirestore(position.latitude, position.longitude);
     });
   }
-
-
-  Future<void> _storeLocationInFirestore(double latitude, double longitude) async {
-    try {
-      // Get the current user's UID from Firebase authentication
-      String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
-
-      // Create a reference to the user's document in Firestore
-      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
-
-      // Update the user's location in Firestore
-      await userRef.update({
-        'latitude': latitude,
-        'longitude': longitude,
-      });
-
-      print('Location stored successfully.');
-    } catch (e) {
-      print('Error storing location: $e');
-    }
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,7 +158,10 @@ class _LocationState extends State<Location> {
                     long = '${position.longitude}';
                     locationMessage = "Latitude: $lat, Longitude: $long";
                   });
+
+                  await _storeLocationInFirestore(position.latitude, position.longitude);
                   _livelocation();
+                  _locationSubscription?.cancel();
                 } catch (e) {
                   print(e.toString());
                   // Handle errors if needed
