@@ -165,9 +165,6 @@ class CustomCard extends StatelessWidget {
 }
 
 
-
-
-
 class RestaurantPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -179,6 +176,7 @@ class RestaurantPage extends StatelessWidget {
 
 class MyStatefulPage extends StatefulWidget {
   @override
+  // ignore: library_private_types_in_public_api
   _MyStatefulPageState createState() => _MyStatefulPageState();
 }
 
@@ -196,7 +194,7 @@ class _MyStatefulPageState extends State<MyStatefulPage> {
         return AlertDialog(
           title: Text('Post Details', style: TextStyle(color: Colors.black)),
           content: Container(
-            width: 300, // Adjust the width as needed
+            width: 300,
             padding: EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -208,17 +206,13 @@ class _MyStatefulPageState extends State<MyStatefulPage> {
                 SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () async {
-                    // Add functionality to handle the post data here
                     String foodItem = foodItemController.text;
                     String description = descriptionController.text;
 
-                    // Upload image to Firebase Storage
                     String imageUrl = await _uploadImage(
                         foodItem, imageController.text);
 
-                    // Store post data in Firestore
                     if (user != null && user.uid != Null){
-                      // Store the post data in Firestore
                       await _storePostData(foodItem, description, imageUrl);
                     }
 
@@ -230,7 +224,7 @@ class _MyStatefulPageState extends State<MyStatefulPage> {
             ),
           ),
           actions: [
-            // Empty for now, you can add actions if needed
+            // Empty -- for now, maybe we add something later.
           ],
         );
       },
@@ -239,13 +233,11 @@ class _MyStatefulPageState extends State<MyStatefulPage> {
 
   Future<String> _uploadImage(String foodItem, String imageUrl) async {
   if (imageUrl.isNotEmpty) {
-    // If the user provided an image URL, use it directly
     return imageUrl;
   } else {
-    // If the user selected an image from the device, upload it to Firebase Storage
-    File imageFile = await _pickImageFromGallery(); // Ensure it's a File type
+    File imageFile = await _pickImageFromGallery(); 
 
-    String imageName = '$foodItem.jpg'; // Adjust the image name as needed
+    String imageName = '$foodItem.jpg';
 
     Reference storageReference =
         FirebaseStorage.instance.ref().child('restaurant_images/$imageName');
@@ -254,7 +246,7 @@ class _MyStatefulPageState extends State<MyStatefulPage> {
       await storageReference.putFile(imageFile);
       return await storageReference.getDownloadURL();
     } catch (error) {
-      // Handle any errors that occur during the upload process
+      
       print('Error uploading image: $error');
       return Future.error('Failed to upload image');
     }
@@ -268,7 +260,7 @@ Future<File> _pickImageFromGallery() async {
   if (pickedFile != null) {
     return File(pickedFile.path);
   } else {
-    // Handle if the user canceled image picking
+
     return Future.error('No image selected');
   }
 }
@@ -277,17 +269,16 @@ Future<File> _pickImageFromGallery() async {
   CollectionReference restaurantCollection =
       FirebaseFirestore.instance.collection('restaurant');
 
-  // Check if the document for the user already exists
   var userDoc = await restaurantCollection.doc("post").get();
 
   if (userDoc.exists) {
-    // If the document exists, update the existing fields and add new ones
+
     await restaurantCollection.doc("post").update({
       'postName': FieldValue.arrayUnion([foodItem]),
       'postDescription': FieldValue.arrayUnion([description]),
     });
   } else {
-    // If the document doesn't exist, create a new one
+
     await restaurantCollection.doc("post").set({
       'postName': [foodItem],
       'postDescription': [description],
@@ -296,14 +287,12 @@ Future<File> _pickImageFromGallery() async {
 }
 
 
-
-
 Widget _buildRoundedTextField(String labelText, TextEditingController controller) {
   return Container(
     padding: EdgeInsets.symmetric(horizontal: 20),
     margin: EdgeInsets.symmetric(vertical: 10),
     decoration: BoxDecoration(
-      color: textFieldColor, // Change color according to your design
+      color: textFieldColor,
       borderRadius: BorderRadius.circular(10),
     ),
     child: TextField(
@@ -324,13 +313,13 @@ Widget _buildRoundedScrollableTextField(String labelText, TextEditingController 
     padding: EdgeInsets.symmetric(horizontal: 20),
     margin: EdgeInsets.symmetric(vertical: 10),
     decoration: BoxDecoration(
-      color: textFieldColor, // Change color according to your design
+      color: textFieldColor,
       borderRadius: BorderRadius.circular(10),
     ),
     child: SingleChildScrollView(
       child: TextField(
         controller: controller,
-        maxLines: null, // Set maxLines to null for multiline input
+        maxLines: null,
         decoration: InputDecoration(
           labelText: labelText,
           border: InputBorder.none,
@@ -418,24 +407,21 @@ class _LocationState extends State<Location> {
 
   Future<void> _storeLocationInFirestore(double latitude, double longitude) async {
   try {
-    // Get the current user from Firebase authentication
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null && user.uid != Null) {
-      // Use the user's UID to create a reference to the 'locations' collection in Firestore
-      CollectionReference locationsRef = FirebaseFirestore.instance.collection('locations');
 
-      // Check if the 'locations' collection already exists
+      CollectionReference locationsRef = FirebaseFirestore.instance.collection('locations');
       DocumentSnapshot locationsSnapshot = await locationsRef.doc(user.uid).get();
 
       if (locationsSnapshot.exists) {
-        // 'locations' collection exists, check if user UID exists and update or create new data
+        
         locationsRef.doc(user.uid).set({
           'latitude': latitude,
           'longitude': longitude,
         }, SetOptions(merge: true));
       } else {
-        // 'locations' collection doesn't exist, create it and add data
+        
         locationsRef.doc(user.uid).set({
           'latitude': latitude,
           'longitude': longitude,
@@ -455,12 +441,8 @@ class _LocationState extends State<Location> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the 
-      // App to enable the location services.
       return Future.error('Location services are disabled.');
     }
 
@@ -468,23 +450,15 @@ class _LocationState extends State<Location> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale 
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
         return Future.error('Location permissions are denied');
       }
     }
     
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately. 
       return Future.error(
         'Location permissions are permanently denied, we cannot request permissions.');
     } 
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
     return await Geolocator.getCurrentPosition();
 }
 
@@ -548,7 +522,6 @@ class _LocationState extends State<Location> {
                   _locationSubscription?.cancel();
                 } catch (e) {
                   print(e.toString());
-                  // Handle errors if needed
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -588,7 +561,7 @@ class _LocationState extends State<Location> {
             ),
             SizedBox(height: 20),
             Text(
-              locationMessage, // Added null check
+              locationMessage,
               style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 30),
@@ -621,11 +594,10 @@ class _LocationState extends State<Location> {
 
                   } catch (e) {
                     print(e.toString());
-                    // Handle errors if needed
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green, // Change the color as needed
+                  backgroundColor: Colors.green, 
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
@@ -652,10 +624,6 @@ class _LocationState extends State<Location> {
   }
 }
 
-
-
-
-
 class MyApp extends StatefulWidget {
   @override
   // ignore: library_private_types_in_public_api
@@ -668,22 +636,22 @@ class _MyHomePageState extends State<MyApp> {
 
   Future<void> _storeTypeInFirestore(String who) async {
     try {
-      // Get the current user from Firebase authentication
+
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null && user.uid != Null) {
-        // Use the user's UID to create a reference to the 'locations' collection in Firestore
+
         CollectionReference typeRef = FirebaseFirestore.instance.collection('type');
 
-        // Check if the 'locations' collection already exists
+
         DocumentSnapshot typeSnapshot = await typeRef.doc(user.uid).get();
 
         if (typeSnapshot.exists) {
-          // 'locations' collection exists, check if user UID exists and update or create new data
+
           typeRef.doc(user.uid).set({
             'who': who,
           }, SetOptions(merge: true));
         } else {
-          // 'locations' collection doesn't exist, create it and add data
+
           typeRef.doc(user.uid).set({
             'who': who,
           });
@@ -707,7 +675,7 @@ class _MyHomePageState extends State<MyApp> {
         elevation: 0.0,
         leading: GestureDetector(
           onTap: () {
-            Navigator.pop(context); // Navigate back to the EntryPage
+            Navigator.pop(context);
           },
           child: Stack(
             alignment: Alignment.center,
@@ -877,10 +845,10 @@ class _EntryPageContentState extends State<EntryPageContent> {
                 ElevatedButton(
                   onPressed: () async {
                     if (action == 'Log in') {
-                      // Get email and password from controllers
+                    
                       String email = emailController.text;
                       String password = passwordController.text;
-                      // Handle login logic
+
                       await _auth.signInWithEmailAndPassword(email: email, password: password);
                     } else if (action == 'Sign up') {
                       // Get name, email, and password from controllers
@@ -892,7 +860,7 @@ class _EntryPageContentState extends State<EntryPageContent> {
                     }
 
                     // ignore: use_build_context_synchronously
-                    Navigator.pop(context); // Close the bottom sheet
+                    Navigator.pop(context); 
                     // ignore: use_build_context_synchronously
                     Navigator.push(
                       context,
