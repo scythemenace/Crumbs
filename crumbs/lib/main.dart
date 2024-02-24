@@ -80,9 +80,12 @@ class _UserPage extends State<UserPageS> {
                   child: Column(
                     children: List.generate(
                       postNames.length,
-                      (index) => CustomCard(
-                        title: postNames[index],
-                        description: postDescriptions[index],
+                      (index) => Padding(
+                        padding: const EdgeInsets.all(24.0), // Adjust padding as needed
+                        child: CustomCard(
+                          title: postNames[index],
+                          description: postDescriptions[index],
+                        ),
                       ),
                     ),
                   ),
@@ -103,58 +106,40 @@ class CustomCard extends StatelessWidget {
   final String title;
   final String description;
 
-  CustomCard({
+  const CustomCard({
     required this.title,
     required this.description,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0),
-        ),
-        elevation: 4.0,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24.0),
+      ),
+      child: Container(
+        width: 150, // Adjust as needed
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
           children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 12.0),
-                    Text(
-                      description,
-                      style: TextStyle(fontSize: 16.0),
-                    ),
-                  ],
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24.0),
+              child: Image.network(
+                "https://firebasestorage.googleapis.com/v0/b/crumbs-4db5b.appspot.com/o/restaurant_images%2F$title.jpg?alt=media&token=a2c9b3cb-97a5-4948-8682-a4ed3645b52f",
+                width: double.infinity,
+                height: 120,
+                fit: BoxFit.cover,
               ),
             ),
-            Container(
-              width: 120.0,
-              height: 120.0,
-              child: Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16.0),
-                  child: Image.network(
-                    "https://firebasestorage.googleapis.com/v0/b/crumbs-4db5b.appspot.com/o/restaurant_images%2F$title.jpg?alt=media&token=a2c9b3cb-97a5-4948-8682-a4ed3645b52f",
-                    fit: BoxFit.cover,
-                    width: 120.0,
-                    height: 120.0,
-                  ),
-                ),
+            // Add spacing between image and title
+            SizedBox(height: 12.0), // Adjust as needed
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
