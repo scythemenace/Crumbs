@@ -1,16 +1,7 @@
 # crumbs
 
-A new Flutter project.
+Food waste recycling using a platform which works based on proximity and notifies people if there's leftover anywhere
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Note
+This project is ongoing and not yet fully finished. There are certain key functionalities which are yet to be added.
+For any suggestions or if you want to collaborate with us, contact either pankur216@gmail.com or sarth8282@gmail.com
